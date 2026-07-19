@@ -1,0 +1,436 @@
+{
+  "id": "iss_flyover_tracker",
+  "name": "ISS Flyover Tracker",
+  "version": "1.0.0",
+  "description": "Show upcoming International Space Station passes visible from your location.",
+  "author": "Chris Ayala",
+  "icon": "satellite",
+  "category": "data",
+  "repository": "https://github.com/chrisaayala/fiestaboard-plugin--iss-flyover-tracker",
+  "documentation": "README.md",
+  "live_data": true,
+  "min_refresh_seconds": 3600,
+  "settings_schema": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "title": "Enable ISS Flyover Tracker",
+        "default": false
+      },
+      "latitude": {
+        "type": "number",
+        "title": "Latitude",
+        "description": "Observer latitude in decimal degrees.",
+        "default": 39.9526,
+        "minimum": -90,
+        "maximum": 90
+      },
+      "longitude": {
+        "type": "number",
+        "title": "Longitude",
+        "description": "Observer longitude in decimal degrees.",
+        "default": -75.1652,
+        "minimum": -180,
+        "maximum": 180
+      },
+      "max_passes": {
+        "type": "integer",
+        "title": "Maximum Passes",
+        "description": "Maximum number of ISS passes to request.",
+        "default": 5,
+        "minimum": 1,
+        "maximum": 5
+      },
+      "visible_only": {
+        "type": "boolean",
+        "title": "Visible Only",
+        "description": "Return only passes observable with the naked eye.",
+        "default": true
+      },
+      "days_ahead": {
+        "type": "integer",
+        "title": "Forecast Days",
+        "description": "Number of days to forecast.",
+        "default": 10,
+        "minimum": 1,
+        "maximum": 14
+      },
+      "timezone": {
+        "type": "string",
+        "title": "Timezone",
+        "description": "IANA timezone used for local display strings.",
+        "default": "America/New_York",
+        "ui:widget": "timezone"
+      },
+      "refresh_seconds": {
+        "type": "integer",
+        "title": "Refresh Interval (seconds)",
+        "description": "How often to refresh ISS pass predictions.",
+        "default": 3600,
+        "minimum": 3600
+      }
+    }
+  },
+  "variables": {
+    "groups": {
+      "next": {
+        "label": "Next Pass"
+      },
+      "visibility": {
+        "label": "Visibility"
+      },
+      "location": {
+        "label": "Location"
+      },
+      "system": {
+        "label": "System"
+      }
+    },
+    "simple": {
+      "status": {
+        "description": "Current ISS pass status.",
+        "type": "string",
+        "max_length": 12,
+        "group": "next",
+        "example": "VISIBLE"
+      },
+      "summary": {
+        "description": "Compact one-line summary of the next pass.",
+        "type": "string",
+        "max_length": 50,
+        "group": "next",
+        "example": "ISS Jul 19 8:58 PM EDT NNW->NE"
+      },
+      "pass_count": {
+        "description": "Number of passes returned by the API.",
+        "type": "number",
+        "max_length": 1,
+        "group": "next",
+        "example": "3"
+      },
+      "next_rise_utc": {
+        "description": "Next pass rise time in UTC.",
+        "type": "string",
+        "max_length": 20,
+        "group": "next",
+        "example": "2026-07-20T00:58:32Z"
+      },
+      "next_rise_local": {
+        "description": "Next pass rise time formatted in the configured timezone.",
+        "type": "string",
+        "max_length": 18,
+        "group": "next",
+        "example": "Jul 19 8:58 PM EDT"
+      },
+      "next_rise_date_local": {
+        "description": "Next pass local date.",
+        "type": "string",
+        "max_length": 6,
+        "group": "next",
+        "example": "Jul 19"
+      },
+      "next_rise_time_local": {
+        "description": "Next pass local time.",
+        "type": "string",
+        "max_length": 8,
+        "group": "next",
+        "example": "8:58 PM"
+      },
+      "time": {
+        "description": "Next pass local time without AM/PM.",
+        "type": "string",
+        "max_length": 5,
+        "group": "next",
+        "example": "8:58"
+      },
+      "time_12h": {
+        "description": "Next pass local 12-hour time with AM/PM.",
+        "type": "string",
+        "max_length": 8,
+        "group": "next",
+        "example": "8:58 PM"
+      },
+      "time_24h": {
+        "description": "Next pass local 24-hour time.",
+        "type": "string",
+        "max_length": 5,
+        "group": "next",
+        "example": "20:58"
+      },
+      "timezone_abbr": {
+        "description": "Timezone abbreviation for the local pass time.",
+        "type": "string",
+        "max_length": 5,
+        "group": "next",
+        "example": "EDT"
+      },
+      "day_of_week": {
+        "description": "Local day of week for the next pass.",
+        "type": "string",
+        "max_length": 9,
+        "group": "next",
+        "example": "Sunday"
+      },
+      "day": {
+        "description": "Local day of month for the next pass.",
+        "type": "number",
+        "max_length": 2,
+        "group": "next",
+        "example": "19"
+      },
+      "seconds_until_next_occurrence": {
+        "description": "Seconds until the next pass rise time, recalculated each fetch.",
+        "type": "number",
+        "max_length": 8,
+        "group": "next",
+        "example": "42212"
+      },
+      "minutes_until_next_occurrence": {
+        "description": "Whole minutes until the next pass rise time, recalculated each fetch.",
+        "type": "number",
+        "max_length": 6,
+        "group": "next",
+        "example": "703"
+      },
+      "culmination_utc": {
+        "description": "Time when the ISS reaches maximum elevation in UTC.",
+        "type": "string",
+        "max_length": 20,
+        "group": "next",
+        "example": "2026-07-20T01:00:10Z"
+      },
+      "culmination_local": {
+        "description": "Local time when the ISS reaches maximum elevation.",
+        "type": "string",
+        "max_length": 8,
+        "group": "next",
+        "example": "9:00 PM"
+      },
+      "duration_seconds": {
+        "description": "Total pass duration in seconds.",
+        "type": "number",
+        "max_length": 4,
+        "group": "next",
+        "example": "197"
+      },
+      "duration": {
+        "description": "Total pass duration formatted for display.",
+        "type": "string",
+        "max_length": 8,
+        "group": "next",
+        "example": "3m 17s"
+      },
+      "rise_heading": {
+        "description": "Compass heading where the ISS rises.",
+        "type": "string",
+        "max_length": 3,
+        "group": "next",
+        "example": "NNW"
+      },
+      "rise_azimuth_deg": {
+        "description": "Rise azimuth in degrees.",
+        "type": "number",
+        "max_length": 5,
+        "group": "next",
+        "example": "339.3"
+      },
+      "set_heading": {
+        "description": "Compass heading where the ISS sets.",
+        "type": "string",
+        "max_length": 3,
+        "group": "next",
+        "example": "NE"
+      },
+      "set_azimuth_deg": {
+        "description": "Set azimuth in degrees.",
+        "type": "number",
+        "max_length": 5,
+        "group": "next",
+        "example": "37.1"
+      },
+      "max_elevation_deg": {
+        "description": "Maximum elevation above the horizon in degrees.",
+        "type": "number",
+        "max_length": 5,
+        "group": "next",
+        "example": "12.8"
+      },
+      "is_above_horizon": {
+        "description": "Whether the pass rises above the configured horizon threshold.",
+        "type": "string",
+        "max_length": 3,
+        "group": "visibility",
+        "example": "yes"
+      },
+      "is_visible": {
+        "description": "Whether the pass is observable with the naked eye.",
+        "type": "string",
+        "max_length": 3,
+        "group": "visibility",
+        "example": "yes"
+      },
+      "next_visible_start_utc": {
+        "description": "Visible portion start time in UTC.",
+        "type": "string",
+        "max_length": 20,
+        "group": "visibility",
+        "example": "2026-07-20T00:59:38Z"
+      },
+      "next_visible_start_local": {
+        "description": "Visible portion start time in the configured timezone.",
+        "type": "string",
+        "max_length": 8,
+        "group": "visibility",
+        "example": "8:59 PM"
+      },
+      "next_visible_end_utc": {
+        "description": "Visible portion end time in UTC.",
+        "type": "string",
+        "max_length": 20,
+        "group": "visibility",
+        "example": "2026-07-20T01:01:49Z"
+      },
+      "next_visible_end_local": {
+        "description": "Visible portion end time in the configured timezone.",
+        "type": "string",
+        "max_length": 8,
+        "group": "visibility",
+        "example": "9:01 PM"
+      },
+      "visible_duration_seconds": {
+        "description": "Visible portion duration in seconds.",
+        "type": "number",
+        "max_length": 4,
+        "group": "visibility",
+        "example": "130"
+      },
+      "visible_duration": {
+        "description": "Visible portion duration formatted for display.",
+        "type": "string",
+        "max_length": 8,
+        "group": "visibility",
+        "example": "2m 10s"
+      },
+      "latitude": {
+        "description": "Observer latitude used for the API request.",
+        "type": "number",
+        "max_length": 9,
+        "group": "location",
+        "example": "39.9526"
+      },
+      "longitude": {
+        "description": "Observer longitude used for the API request.",
+        "type": "number",
+        "max_length": 9,
+        "group": "location",
+        "example": "-75.1652"
+      },
+      "timezone": {
+        "description": "Timezone used for local display strings.",
+        "type": "string",
+        "max_length": 32,
+        "group": "location",
+        "example": "America/New_York"
+      },
+      "satellite": {
+        "description": "Satellite name returned by the API.",
+        "type": "string",
+        "max_length": 12,
+        "group": "system",
+        "example": "ISS (ZARYA)"
+      },
+      "generated_at_utc": {
+        "description": "API response generation time in UTC.",
+        "type": "string",
+        "max_length": 20,
+        "group": "system",
+        "example": "2026-07-19T18:06:09Z"
+      },
+      "tle_epoch_utc": {
+        "description": "TLE epoch used by the API in UTC.",
+        "type": "string",
+        "max_length": 20,
+        "group": "system",
+        "example": "2026-07-19T04:27:19Z"
+      },
+      "tle_age_hours": {
+        "description": "Age of the orbital elements in hours.",
+        "type": "number",
+        "max_length": 5,
+        "group": "system",
+        "example": "13.6"
+      }
+    },
+    "arrays": {
+      "passes": {
+        "label_field": "rise_local",
+        "item_fields": [
+          "rise_utc",
+          "rise_local",
+          "rise_date_local",
+          "rise_time_local",
+          "time",
+          "time_12h",
+          "time_24h",
+          "timezone_abbr",
+          "day_of_week",
+          "day",
+          "seconds_until_next_occurrence",
+          "minutes_until_next_occurrence",
+          "visible_start_utc",
+          "visible_start_local",
+          "visible_end_utc",
+          "visible_end_local",
+          "culmination_utc",
+          "culmination_local",
+          "duration",
+          "visible_duration",
+          "rise_heading",
+          "set_heading",
+          "max_elevation_deg",
+          "is_above_horizon",
+          "is_visible"
+        ]
+      }
+    }
+  },
+  "demo": {
+    "name": "ISS Flyover Demo",
+    "device_type": "flagship",
+    "template": [
+      "{{iss_flyover_tracker.status}}",
+      "{{iss_flyover_tracker.next_rise_local}}",
+      "RISE {{iss_flyover_tracker.rise_heading}} SET {{iss_flyover_tracker.set_heading}}",
+      "MAX {{iss_flyover_tracker.max_elevation_deg}} DEG",
+      "VISIBLE {{iss_flyover_tracker.visible_duration}}",
+      ""
+    ],
+    "line_metadata": [
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      }
+    ]
+  }
+}
