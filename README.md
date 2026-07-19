@@ -12,6 +12,8 @@ FiestaBoard plugin that shows upcoming International Space Station passes for a 
 - `timezone`: Timezone for local display strings. Defaults to `America/New_York`.
 - `refresh_seconds`: Refresh interval. Defaults to `3600`.
 
+See [docs/SETUP.md](docs/SETUP.md) for setup details and example location values.
+
 ## Variables
 
 Use variables in FiestaBoard templates with the `iss_flyover_tracker` prefix, for example:
