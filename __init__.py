@@ -408,7 +408,7 @@ class ISSFlyOverTrackerPlugin(PluginBase):
             ),
         )
         logger.debug("ISS formatted display generated: %s", result.formatted_lines)
-        logger.info("ISS fetch_data completed successfully")
+        logger.info("ISS fetch_data() completed successfully")
         return result
 
     def validate_config(self, config: dict[str, Any]) -> list[str]:

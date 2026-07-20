@@ -2,6 +2,8 @@
 
 FiestaBoard plugin that shows upcoming International Space Station passes for a configured location using the Pollux Labs ISS Pass API.
 
+![Next ISS flyover preview](docs/next_iss_flyover_1.png)
+
 ## Configuration
 
 - `latitude`: Observer latitude. Defaults to Philadelphia, PA (`39.9526`).
