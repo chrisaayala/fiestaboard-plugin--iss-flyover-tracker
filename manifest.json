@@ -1,7 +1,7 @@
 {
   "id": "iss_flyover_tracker",
   "name": "ISS Flyover Tracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Show upcoming International Space Station passes visible from your location.",
   "author": "Chris Ayala",
   "icon": "satellite",

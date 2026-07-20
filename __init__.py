@@ -54,7 +54,7 @@ class ISSFlyOverTrackerPlugin(PluginBase):
         return "iss_flyover_tracker"
 
     def fetch_data(self) -> PluginResult:
-        logger.info("ISS fetch_data started")
+        logger.debug("ISS fetch_data started")
         config = getattr(self, "config", {}) or {}
         settings_properties = self._settings_properties()
 
@@ -166,7 +166,6 @@ class ISSFlyOverTrackerPlugin(PluginBase):
                 self._fetch_cache_time = datetime.now()
                 self._fetch_cache_payload = payload
                 logger.info("ISS cache updated")
-                logger.info("ISS API fetch succeeded")
             except Exception as exc:
                 logger.error("Error fetching ISS pass data: %s", exc, exc_info=True)
                 # If the API is down but we have a payload for the exact same
@@ -175,16 +174,16 @@ class ISSFlyOverTrackerPlugin(PluginBase):
                 # or options, so stale data would be misleading. This also
                 # covers the "first pass expired, refresh failed" path.
                 if self._fetch_cache_key == cache_key:
-                    logger.info("ISS stale cache available for current request")
+                    logger.debug("ISS stale cache available for current request")
                     payload = self._fetch_cache_payload
                 else:
-                    logger.info("ISS stale cache unavailable for current request")
+                    logger.debug("ISS stale cache unavailable for current request")
                     payload = None
                 if payload is None:
                     return PluginResult(available=False, error=f"Unable to fetch ISS pass data: {exc}")
                 logger.warning("Using stale cached ISS pass data after API error")
         else:
-            logger.info("ISS cache hit; rebuilding display data from cached API payload")
+            logger.debug("ISS cache hit; rebuilding display data from cached API payload")
 
         try:
             # Rebuild from payload every time so countdown fields and local
@@ -197,7 +196,7 @@ class ISSFlyOverTrackerPlugin(PluginBase):
                 timezone = ZoneInfo(fallback)
 
             passes = payload.get("passes") or []
-            logger.info("Building ISS result data from %s API pass(es)", len(passes))
+            logger.debug("Building ISS result data from %s API pass(es)", len(passes))
             pass_items: list[dict[str, Any]] = []
 
             for pass_payload in passes:
@@ -380,7 +379,7 @@ class ISSFlyOverTrackerPlugin(PluginBase):
                     }
                 )
 
-            logger.info(
+            logger.debug(
                 "ISS pass data parsed: pass_count=%s status=%s next_rise_local=%s",
                 data.get("pass_count"),
                 data.get("status"),
@@ -408,7 +407,7 @@ class ISSFlyOverTrackerPlugin(PluginBase):
                 ]
             ),
         )
-        logger.info("ISS formatted display generated: %s", result.formatted_lines)
+        logger.debug("ISS formatted display generated: %s", result.formatted_lines)
         logger.info("ISS fetch_data completed successfully")
         return result
 
