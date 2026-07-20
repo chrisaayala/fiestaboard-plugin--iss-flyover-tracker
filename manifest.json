@@ -42,6 +42,14 @@
         "minimum": 1,
         "maximum": 5
       },
+      "min_elevation": {
+        "type": "number",
+        "title": "Minimum Elevation",
+        "description": "Minimum peak elevation in degrees. Defaults to 20 because lower passes are usually too close to the horizon for most observers.",
+        "default": 20,
+        "minimum": 0,
+        "maximum": 90
+      },
       "visible_only": {
         "type": "boolean",
         "title": "Visible Only",
@@ -255,6 +263,13 @@
         "max_length": 5,
         "group": "next",
         "example": "12.8"
+      },
+      "min_elevation_deg": {
+        "description": "Minimum peak elevation threshold used for the API request.",
+        "type": "number",
+        "max_length": 5,
+        "group": "visibility",
+        "example": "20"
       },
       "is_above_horizon": {
         "description": "Whether the pass rises above the configured horizon threshold.",

@@ -48,12 +48,6 @@ class PluginBase:
 class ISSFlyOverTrackerPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.plugin_module = cls._load_plugin_module()
-        manifest_path = Path(__file__).resolve().parents[1] / "manifest.json"
-        cls.manifest_data = json.loads(manifest_path.read_text())
-
-    @staticmethod
-    def _load_plugin_module():
         src_module = types.ModuleType("src")
         plugins_module = types.ModuleType("src.plugins")
         base_module = types.ModuleType("src.plugins.base")
@@ -68,7 +62,10 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("iss_flyover_tracker_plugin", module_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return module
+        cls.plugin_module = module
+
+        manifest_path = Path(__file__).resolve().parents[1] / "manifest.json"
+        cls.manifest_data = json.loads(manifest_path.read_text())
 
     def test_fetch_data_calls_pollux_with_defaults_and_returns_next_pass_data(self) -> None:
         response = Mock()
@@ -88,6 +85,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
                 "lat": 39.9526,
                 "lon": -75.1652,
                 "n": 5,
+                "min_elevation": 20.0,
                 "visible_only": "true",
                 "days_ahead": 10,
             },
@@ -109,6 +107,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
         self.assertEqual(result.data["rise_heading"], "NNW")
         self.assertEqual(result.data["set_heading"], "NE")
         self.assertEqual(result.data["max_elevation_deg"], 12.8)
+        self.assertEqual(result.data["min_elevation_deg"], 20.0)
         self.assertEqual(result.data["is_above_horizon"], "yes")
         self.assertEqual(result.data["is_visible"], "yes")
         self.assertEqual(len(result.data["passes"]), 2)
@@ -135,6 +134,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
                 "latitude": 34.0522,
                 "longitude": -118.2437,
                 "max_passes": 3,
+                "min_elevation": 35,
                 "visible_only": False,
                 "days_ahead": 7,
                 "timezone": "America/Los_Angeles",
@@ -148,6 +148,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
                 "lat": 34.0522,
                 "lon": -118.2437,
                 "n": 3,
+                "min_elevation": 35.0,
                 "visible_only": "false",
                 "days_ahead": 7,
             },
@@ -163,6 +164,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
         properties["latitude"]["default"] = 12.3456
         properties["longitude"]["default"] = 65.4321
         properties["max_passes"]["default"] = 2
+        properties["min_elevation"]["default"] = 25
         properties["visible_only"]["default"] = False
         properties["days_ahead"]["default"] = 4
         properties["timezone"]["default"] = "UTC"
@@ -183,6 +185,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
                 "lat": 12.3456,
                 "lon": 65.4321,
                 "n": 2,
+                "min_elevation": 25.0,
                 "visible_only": "false",
                 "days_ahead": 4,
             },
@@ -199,7 +202,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
         with patch.object(self.plugin_module.requests, "get", return_value=response):
             plugin = self.plugin_module.ISSFlyOverTrackerPlugin(self.manifest_data)
             plugin.config = {}
-            plugin._now_utc = Mock(return_value=datetime(2026, 7, 20, 0, 0, 0, tzinfo=timezone.utc))
+            plugin._clock = Mock(return_value=datetime(2026, 7, 20, 0, 0, 0, tzinfo=timezone.utc))
 
             result = plugin.fetch_data()
 
@@ -257,6 +260,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
                 "latitude": 91,
                 "longitude": -181,
                 "max_passes": 6,
+                "min_elevation": 91,
                 "visible_only": "true",
                 "days_ahead": 15,
                 "timezone": "Not/AZone",
@@ -269,6 +273,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
                 "Latitude must be between -90 and 90",
                 "Longitude must be between -180 and 180",
                 "Maximum passes must be between 1 and 5",
+                "Minimum elevation must be between 0 and 90",
                 "Forecast days must be between 1 and 14",
                 "Visible Only must be true or false",
                 "Timezone must be a valid IANA timezone name",
@@ -288,7 +293,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
         with patch.object(self.plugin_module.requests, "get", return_value=response) as get:
             plugin = self.plugin_module.ISSFlyOverTrackerPlugin(self.manifest_data)
             plugin.config = {}
-            plugin._now_utc = Mock(return_value=datetime(2026, 7, 20, 1, 0, 0, tzinfo=timezone.utc))
+            plugin._clock = Mock(return_value=datetime(2026, 7, 20, 1, 0, 0, tzinfo=timezone.utc))
 
             first_result = plugin.fetch_data()
             second_result = plugin.fetch_data()
@@ -296,6 +301,21 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
         self.assertTrue(first_result.available)
         self.assertTrue(second_result.available)
         get.assert_called_once()
+
+    def test_fetch_data_refreshes_cache_when_min_elevation_changes(self) -> None:
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = self._sample_payload()
+
+        with patch.object(self.plugin_module.requests, "get", return_value=response) as get:
+            plugin = self.plugin_module.ISSFlyOverTrackerPlugin(self.manifest_data)
+            plugin.config = {}
+
+            plugin.fetch_data()
+            plugin.config = {"min_elevation": 30}
+            plugin.fetch_data()
+
+        self.assertEqual(get.call_count, 2)
 
     def test_fetch_data_refreshes_cache_after_first_cached_pass_set_time(self) -> None:
         response = Mock()
@@ -305,7 +325,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
         with patch.object(self.plugin_module.requests, "get", return_value=response) as get:
             plugin = self.plugin_module.ISSFlyOverTrackerPlugin(self.manifest_data)
             plugin.config = {}
-            plugin._now_utc = Mock(return_value=datetime(2026, 7, 20, 1, 2, 0, tzinfo=timezone.utc))
+            plugin._clock = Mock(return_value=datetime(2026, 7, 20, 1, 2, 0, tzinfo=timezone.utc))
 
             plugin.fetch_data()
             plugin.fetch_data()
@@ -357,7 +377,7 @@ class ISSFlyOverTrackerPluginTest(unittest.TestCase):
             },
             "generated_at": "2026-07-19T18:06:09Z",
             "params": {
-                "min_elevation_deg": 10,
+                "min_elevation_deg": 20,
                 "visible_only": True,
                 "sun_alt_max_deg": -6,
                 "days_ahead": 10,

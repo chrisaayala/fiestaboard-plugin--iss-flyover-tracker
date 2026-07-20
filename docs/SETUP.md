@@ -12,6 +12,7 @@ The plugin can run with its defaults, but users should update the location field
 | `latitude` | Observer latitude in decimal degrees. | `39.9526` |
 | `longitude` | Observer longitude in decimal degrees. | `-75.1652` |
 | `max_passes` | Maximum number of passes to request. | `5` |
+| `min_elevation` | Minimum peak elevation in degrees. | `20` |
 | `visible_only` | Only return passes visible to the naked eye. | `true` |
 | `days_ahead` | Forecast window in days. | `10` |
 | `timezone` | IANA timezone used for local display strings. | `America/New_York` |
@@ -33,6 +34,8 @@ Examples:
 ## Pass Options
 
 `max_passes` controls how many passes the plugin asks Pollux to return. FiestaBoard caps this plugin at `5` because Vestaboard templates usually need the next pass or a short list.
+
+`min_elevation` controls the minimum peak elevation above the horizon. The API accepts `0` through `90` degrees. This plugin defaults to `20` because lower passes are often blocked by buildings, trees, terrain, haze, and horizon glow.
 
 `visible_only` defaults to `true`. With this setting on, Pollux only returns passes that should be observable with the naked eye, meaning the ISS is sunlit while the observer is in twilight or night.
 

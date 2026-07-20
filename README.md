@@ -7,6 +7,7 @@ FiestaBoard plugin that shows upcoming International Space Station passes for a 
 - `latitude`: Observer latitude. Defaults to Philadelphia, PA (`39.9526`).
 - `longitude`: Observer longitude. Defaults to Philadelphia, PA (`-75.1652`).
 - `max_passes`: Maximum passes to request. Defaults to `5`, max `5`.
+- `min_elevation`: Minimum peak elevation in degrees. Defaults to `20`, range `0`-`90`.
 - `visible_only`: Only return naked-eye visible passes. Defaults to `true`.
 - `days_ahead`: Forecast window in days. Defaults to `10`, max `14`.
 - `timezone`: Timezone for local display strings. Defaults to `America/New_York`.
@@ -57,6 +58,7 @@ Use variables in FiestaBoard templates with the `iss_flyover_tracker` prefix, fo
 | --- | --- | --- |
 | `{{iss_flyover_tracker.is_above_horizon}}` | Whether the pass rises above the configured horizon threshold. | `yes` |
 | `{{iss_flyover_tracker.is_visible}}` | Whether the pass is observable with the naked eye. | `yes` |
+| `{{iss_flyover_tracker.min_elevation_deg}}` | Minimum peak elevation threshold used for the API request. | `20` |
 | `{{iss_flyover_tracker.next_visible_start_utc}}` | Visible portion start time in UTC. | `2026-07-20T00:59:38Z` |
 | `{{iss_flyover_tracker.next_visible_start_local}}` | Visible portion start time in the configured timezone. | `8:59 PM` |
 | `{{iss_flyover_tracker.next_visible_end_utc}}` | Visible portion end time in UTC. | `2026-07-20T01:01:49Z` |
